@@ -26,7 +26,7 @@ services:
       - CRIBL_DIST_MODE=single
       - HTTP_PROXY=http://mitmproxy:8081
       - HTTPS_PROXY=http://mitmproxy:8081
-      - NO_PROXY=localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1,openobserve,openobserve:5080
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/mitmproxy-ca.pem
     volumes:
       - proxy-certs:/proxy-certs:ro
