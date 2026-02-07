@@ -1,46 +1,58 @@
 version: '3.8'
 
 services:
+  # Proxy container - intercepts all telemetry traffic
+  mitmproxy:
+    image: kenankarakoc/logparse-test:latest
+    container_name: cribl-proxy
+    volumes:
+      - proxy-certs:/certs
+      - ./logs:/logs
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "test", "-f", "/certs/mitmproxy-ca-cert.pem"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    networks:
+      - obs_net
+    restart: unless-stopped
+
+  # Cribl container - routes traffic through proxy
   cribl:
     image: cribl/cribl:latest
     container_name: cribl
-    restart: unless-stopped
     environment:
-      - CRIB_DIST_MODE=single
+      - CRIBL_DIST_MODE=single
       - HTTP_PROXY=http://mitmproxy:8080
       - HTTPS_PROXY=http://mitmproxy:8080
+      - NO_PROXY=localhost,127.0.0.1
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/mitmproxy-ca.pem
     volumes:
-      - cribl_config:/opt/cribl/config-volume
-      - cribl_local:/opt/cribl/local
-      - ./certs/mitmproxy-ca-cert.pem:/etc/ssl/certs/mitmproxy-ca.pem:ro
+      - proxy-certs:/proxy-certs:ro
+      - cribl-data:/opt/cribl/data
+      - cribl-config:/opt/cribl/config-volume
+      - cribl-local:/opt/cribl/local
     ports:
-      - "9000:9000"   # UI
-      - "10001:10001" # TCP JSON Input
-      - "9514:9514/tcp" # Syslog TCP
-      - "9514:9514/udp" # Syslog UDP
-    networks:
-      - obs_net
+      - "9000:9000"
+      - "10001:10001"
+      - "9514:9514/tcp"
+      - "9514:9514/udp"
     depends_on:
-      - mitmproxy
-
-  mitmproxy:
-    image: mitmproxy/mitmproxy:latest
-    container_name: mitmproxy
-    command: mitmdump -s /scripts/proxy-addon.py --set block_global=false
-    volumes:
-      - ./proxy-addon.py:/scripts/proxy-addon.py:ro
-      - ./certs:/home/mitmproxy/.mitmproxy
-      - ./logs:/home/mitmproxy/logs
-    ports:
-      - "8080:8080"   # Proxy port
+      mitmproxy:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c", "cp /proxy-certs/mitmproxy-ca-cert.pem /etc/ssl/certs/mitmproxy-ca.pem && exec /sbin/entrypoint.sh cribl"]
     networks:
       - obs_net
+    restart: unless-stopped
 
 networks:
   obs_net:
     driver: bridge
 
 volumes:
-  cribl_config:
-  cribl_local:
+  proxy-certs:
+  cribl-data:
+  cribl-config:
+  cribl-local:
