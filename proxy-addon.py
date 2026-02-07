@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 import os
 
-LOG_DIR = "/home/mitmproxy/logs"
+LOG_DIR = "/logs"
 
 class CriblTelemetryInterceptor:
     def __init__(self):
