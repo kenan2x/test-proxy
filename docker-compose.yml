@@ -7,41 +7,39 @@ services:
     restart: unless-stopped
     environment:
       - CRIB_DIST_MODE=single
+      - HTTP_PROXY=http://mitmproxy:8080
+      - HTTPS_PROXY=http://mitmproxy:8080
+      - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/mitmproxy-ca.pem
     volumes:
       - cribl_config:/opt/cribl/config-volume
       - cribl_local:/opt/cribl/local
+      - ./certs/mitmproxy-ca-cert.pem:/etc/ssl/certs/mitmproxy-ca.pem:ro
     ports:
       - "9000:9000"   # UI
-      - "10001:10001" # TCP JSON Input (Yedek olarak kalsın)
+      - "10001:10001" # TCP JSON Input
       - "9514:9514/tcp" # Syslog TCP
       - "9514:9514/udp" # Syslog UDP
-    extra_hosts:
-      - "cdn.cribl.io:172.25.0.10"  # Telemetry mock server'a yönlendir
     networks:
       - obs_net
     depends_on:
-      - telemetry-mock
+      - mitmproxy
 
-  telemetry-mock:
-    image: kenankarakoc/logparse-test:latest
-    container_name: telemetry-mock
-    restart: unless-stopped
-    ports:
-      - "8000:8000"   # Health check API
-      - "8888:80"     # HTTP telemetry endpoint
-      - "8443:443"    # HTTPS telemetry endpoint
+  mitmproxy:
+    image: mitmproxy/mitmproxy:latest
+    container_name: mitmproxy
+    command: mitmdump -s /scripts/proxy-addon.py --set block_global=false
     volumes:
-      - ./logs:/app/logs
+      - ./proxy-addon.py:/scripts/proxy-addon.py:ro
+      - ./certs:/home/mitmproxy/.mitmproxy
+      - ./logs:/home/mitmproxy/logs
+    ports:
+      - "8080:8080"   # Proxy port
     networks:
-      obs_net:
-        ipv4_address: 172.25.0.10
+      - obs_net
 
 networks:
   obs_net:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.25.0.0/16
 
 volumes:
   cribl_config:
