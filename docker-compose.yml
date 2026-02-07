@@ -7,7 +7,6 @@ services:
     container_name: cribl-proxy
     volumes:
       - proxy-certs:/certs
-      - ./logs:/logs
     ports:
       - "8081:8081"
     healthcheck:
