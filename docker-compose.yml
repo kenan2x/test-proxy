@@ -31,9 +31,9 @@ services:
       - NODE_EXTRA_CA_CERTS=/etc/ssl/certs/mitmproxy-ca.pem
     volumes:
       - proxy-certs:/proxy-certs:ro
-      - cribl-data:/opt/cribl/data
-      - cribl-config:/opt/cribl/config-volume
-      - cribl-local:/opt/cribl/local
+      - cribl_data:/opt/cribl/data
+      - cribl_config:/opt/cribl/config-volume
+      - cribl_local:/opt/cribl/local
     ports:
       - "9000:9000"
       - "10001:10001"
@@ -53,6 +53,6 @@ networks:
 
 volumes:
   proxy-certs:
-  cribl-data:
-  cribl-config:
-  cribl-local:
+  cribl_data:
+  cribl_config:
+  cribl_local:
