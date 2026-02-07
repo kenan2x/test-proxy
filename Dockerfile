@@ -18,7 +18,7 @@ RUN mkdir -p /certs /logs && chmod 777 /certs /logs
 USER mitmproxy
 
 # Expose ports
-EXPOSE 8080
+EXPOSE 8081
 
 # Set environment
 ENV MITMPROXY_CONFDIR=/certs
