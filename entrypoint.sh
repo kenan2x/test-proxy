@@ -12,4 +12,4 @@ fi
 
 echo "[ENTRYPOINT] Starting mitmproxy on port 8081..."
 # Start mitmproxy with addon
-exec mitmdump -s /scripts/proxy-addon.py --set confdir=/certs --set block_global=false --listen-port 8081
+exec mitmdump -s /scripts/proxy-addon.py --set confdir=/certs --set block_global=false --set connection_strategy=lazy --listen-port 8081
