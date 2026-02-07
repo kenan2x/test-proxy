@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  cribl:
+    image: cribl/cribl:latest
+    container_name: cribl
+    restart: unless-stopped
+    environment:
+      - CRIB_DIST_MODE=single
+    volumes:
+      - cribl_config:/opt/cribl/config-volume
+      - cribl_local:/opt/cribl/local
+    ports:
+      - "9000:9000"   # UI
+      - "10001:10001" # TCP JSON Input (Yedek olarak kalsın)
+      - "9514:9514/tcp" # Syslog TCP
+      - "9514:9514/udp" # Syslog UDP
+    extra_hosts:
+      - "cdn.cribl.io:172.25.0.10"  # Telemetry mock server'a yönlendir
+    networks:
+      - obs_net
+    depends_on:
+      - telemetry-mock
+
+  telemetry-mock:
+    image: kenankarakoc/logparse-test:latest
+    container_name: telemetry-mock
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # Health check API
+      - "8888:80"     # HTTP telemetry endpoint
+      - "8443:443"    # HTTPS telemetry endpoint
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      obs_net:
+        ipv4_address: 172.25.0.10
+
+networks:
+  obs_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+
+volumes:
+  cribl_config:
+  cribl_local:
